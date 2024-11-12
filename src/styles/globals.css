@@ -1,0 +1,263 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 232 47% 8%;
+    --foreground: 220 40% 98%;
+    --card: 232 47% 11%;
+    --card-foreground: 220 40% 98%;
+    --popover: 232 47% 11%;
+    --popover-foreground: 220 40% 98%;
+    --primary: 220 40% 98%;
+    --primary-foreground: 232 47% 8%;
+    --secondary: 232 47% 20%;
+    --secondary-foreground: 220 40% 98%;
+    --muted: 232 47% 15%;
+    --muted-foreground: 220 40% 85%;
+    --accent: 232 47% 15%;
+    --accent-foreground: 220 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 232 47% 15%;
+    --input: 232 47% 15%;
+    --ring: 220 40% 98%;
+    --radius: 0.5rem;
+    background-color: hsl(232 47% 8%);
+  }
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 267 35% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 267 35% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 267 35% 12%;
+    --primary: 267 35% 12%;
+    --primary-foreground: 60 100% 89%;
+    --secondary: 267 35% 92%;
+    --secondary-foreground: 267 35% 12%;
+    --muted: 267 35% 92%;
+    --muted-foreground: 267 35% 25%;
+    --accent: 267 35% 92%;
+    --accent-foreground: 267 35% 12%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 60 100% 89%;
+    --border: 267 35% 85%;
+    --input: 267 35% 85%;
+    --ring: 267 35% 12%;
+
+    & input,
+    & .input {
+      @apply text-foreground placeholder:text-muted-foreground;
+    }
+
+    & button,
+    & .button,
+    & [type="button"],
+    & [type="submit"] {
+      @apply bg-secondary hover:bg-secondary/80 border-secondary-foreground/20
+             text-secondary-foreground shadow-md hover:shadow-lg;
+    }
+
+    & button[data-variant="destructive"],
+    & .button[data-variant="destructive"] {
+      @apply bg-destructive text-destructive-foreground 
+             hover:bg-destructive/90 border-destructive/50;
+    }
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  /* Base Button Styles */
+  button,
+  .button,
+  [type="button"],
+  [type="submit"] {
+    @apply bg-secondary border-2 border-accent text-primary px-4 py-2 rounded-md
+           hover:bg-accent hover:border-primary transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-secondary
+           disabled:hover:border-accent
+           shadow-md hover:shadow-lg font-medium;
+  }
+
+  /* Destructive Button Styles - Make more specific and prominent */
+  button[data-variant="destructive"],
+  .button[data-variant="destructive"],
+  [type="button"][data-variant="destructive"],
+  [type="submit"][data-variant="destructive"] {
+    @apply bg-destructive border-destructive text-destructive-foreground
+           hover:bg-destructive/90 hover:border-destructive/90
+           shadow-md hover:shadow-lg !important;
+  }
+
+  /* Colourful Theme Button Styles */
+  .colourful button,
+  .colourful .button,
+  .colourful [type="button"],
+  .colourful [type="submit"] {
+    @apply bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600
+           border border-indigo-300/20 text-white rounded-md
+           shadow-lg hover:shadow-xl hover:border-indigo-300/30
+           transition-all duration-300
+           hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  /* Colourful Theme Destructive Button */
+  .colourful button[data-variant="destructive"],
+  .colourful .button[data-variant="destructive"] {
+    @apply bg-gradient-to-r from-red-600 via-red-500 to-red-700
+           border-red-300/20 text-white hover:border-red-300/30 !important;
+    background-image: linear-gradient(to right, rgb(220, 38, 38), rgb(239, 68, 68), rgb(185, 28, 28));
+  }
+
+  /* Base Input Styles */
+  input,
+  .input {
+    @apply bg-card border-2 border-accent text-foreground px-4 py-2 rounded-md
+           focus:border-primary focus:outline-none transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .input-container {
+    position: relative;
+    z-index: 10; /* Ensure it's above other elements */
+  }
+
+  .input {
+    position: relative;
+    z-index: 20;
+    padding-left: 2.5rem;
+  }
+
+  /* Base Select Styles */
+  [data-radix-select-trigger] {
+    @apply bg-card border-2 border-accent text-primary hover:border-primary transition-all duration-200;
+  }
+
+  [data-radix-select-content] {
+    @apply bg-card border-2 border-accent text-primary rounded-md shadow-lg;
+  }
+
+  [data-radix-select-item] {
+    @apply hover:bg-accent/50 cursor-pointer rounded-sm px-2 py-1.5 outline-none;
+  }
+
+  [data-radix-select-item][data-highlighted] {
+    @apply bg-accent/50;
+  }
+
+  /* Colourful Theme Specific Styles */
+  .colourful {
+    background: linear-gradient(135deg, #1a1f35, #2d1f3d) !important;
+  }
+
+  .colourful .card {
+    @apply bg-gradient-to-br from-[#1a1f35]/90 via-[#2d1f3d]/90 to-[#1a1f35]/90
+           border border-indigo-300/20 shadow-lg
+           hover:border-indigo-300/30
+           transition-all duration-300;
+  }
+
+  .colourful h1,
+  .colourful h2,
+  .colourful h3,
+  .colourful h4 {
+    @apply text-indigo-100;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .colourful .text-muted-foreground {
+    @apply text-indigo-200/70;
+  }
+
+  /* Dark mode support */
+  .dark,
+  .light,
+  .colourful {
+    color-scheme: dark;
+  }
+
+  [data-radix-popper-content-wrapper] {
+    @apply z-50 !important;
+  }
+
+  html,
+  body {
+    background-color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+  }
+
+  #root {
+    min-height: 100vh;
+    background-color: inherit;
+  }
+
+  .relative {
+    position: relative;
+  }
+
+  .flex-1 {
+    flex: 1;
+  }
+
+  .repository-card {
+    @apply transition-all duration-300;
+  }
+
+  .repository-card:hover {
+    @apply transform scale-[1.02] shadow-lg;
+  }
+
+  .repository-card.active {
+    @apply border-primary bg-accent/10 shadow-lg scale-[1.02];
+  }
+
+  .loading-pulse {
+    @apply animate-pulse bg-accent/20;
+  }
+}
+
+@layer utilities {
+  .bg-card\/50 {
+    background-color: hsl(var(--card) / 0.5);
+  }
+
+  .bg-accent\/50 {
+    background-color: hsl(var(--accent) / 0.5);
+  }
+
+  .icon-button {
+    @apply inline-flex items-center justify-center w-8 h-8 p-0;
+
+    & svg {
+      @apply w-4 h-4;
+    }
+  }
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-10px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}

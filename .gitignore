@@ -1,0 +1,90 @@
+# Dependencies
+node_modules
+/target/
+dist
+dist-ssr
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+*.local
+/gen/schemas
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE and Editor files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*~
+
+# Debug files
+.debug/
+*.pdb
+
+# Cache directories
+.cache/
+.parcel-cache/
+.npm
+.eslintcache
+.stylelintcache
+.rollup.cache
+.webpack/
+
+# TypeScript
+*.tsbuildinfo
+.tscache/
+
+# Test coverage
+coverage/
+
+# Rust specific
+Cargo.lock
+target/
+**/*.rs.bk
+
+# GitHub specific
+.github/workflow/*.yml.swp
+
+# Secrets
+*.pem
+*.key
+*.cert
+*.p12
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Backups
+*.bak
+*.backup
+*.old

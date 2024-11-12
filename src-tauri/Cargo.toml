@@ -1,0 +1,30 @@
+[package]
+name = "simplegit"
+version = "1.0.0"
+description = "A simple git client for managing your git repositories"
+authors = ["Swatto86"]
+license = "MIT"
+repository = "https://github.com/swatto86/simplegit"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.0", features = [] }
+
+[dependencies]
+tauri = { version = "1.0", features = [ "system-tray", "fs-all", "http-request", "shell-open", "protocol-asset", "path-all", "dialog-all"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+git2 = "0.18"
+thiserror = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+oauth2 = "4.4"
+reqwest = { version = "0.11", features = ["json"] }
+uuid = { version = "1.0", features = ["v4"] }
+dotenv = "0.15"
+dirs = "5.0"
+parking_lot = "0.12"
+notify = "6.1.1"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
