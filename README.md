@@ -26,10 +26,6 @@ A modern, lightweight Git client built with Tauri, React, and TypeScript.
 Download the latest version for your platform:
 
 - **Windows**: [SimpleGit-1.0.0-setup.msi](https://github.com/Swatto86/simplegit/releases/download/v1.0.0/SimpleGit-1.0.0-setup.msi)
-- **macOS**: [SimpleGit-1.0.0.dmg](https://github.com/Swatto86/simplegit/releases/download/v1.0.0/SimpleGit-1.0.0.dmg)
-- **Linux**:
-  - [SimpleGit-1.0.0.AppImage](https://github.com/Swatto86/simplegit/releases/download/v1.0.0/SimpleGit-1.0.0.AppImage)
-  - [SimpleGit-1.0.0.deb](https://github.com/Swatto86/simplegit/releases/download/v1.0.0/SimpleGit-1.0.0.deb)
 
 ### Release History
 
@@ -52,8 +48,6 @@ For a complete list of releases and changes, visit our [Releases page](https://g
 - [Git](https://git-scm.com/downloads)
 - Platform-specific dependencies for Tauri:
   - [Windows Requirements](https://tauri.app/v1/guides/getting-started/prerequisites#windows)
-  - [macOS Requirements](https://tauri.app/v1/guides/getting-started/prerequisites#macos)
-  - [Linux Requirements](https://tauri.app/v1/guides/getting-started/prerequisites#linux)
 
 ### Installation
 
@@ -104,6 +98,7 @@ To use the GitHub authentication feature, you need to set up a GitHub OAuth App:
 
 ## Project Structure
 
+```text
 simplegit/
 ├── src/ # React frontend source code
 │ ├── components/ # UI components
@@ -117,6 +112,7 @@ simplegit/
 ├── public/ # Static assets
 ├── scripts/ # Build and utility scripts
 └── releases/ # Release artifacts
+```
 
 ## Available Scripts
 
