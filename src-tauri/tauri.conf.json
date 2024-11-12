@@ -103,7 +103,8 @@
         "minWidth": 2001,
         "minHeight": 1339,
         "center": true,
-        "visible": true,
+        "visible": false,
+        "transparent": true,
         "decorations": true,
         "skipTaskbar": true,
         "label": "main"

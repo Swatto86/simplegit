@@ -7,20 +7,41 @@
     <title>SimpleGit</title>
     
     <style>
+      /* Prevent white flash */
       html, body {
-        background: #1a1a1a;
+        background: #1a1626; /* Match your app's background color */
         margin: 0;
         padding: 0;
       }
+
+      /* Add fade-in animation */
       #root {
-        opacity: 1;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
         min-height: 100vh;
         background-color: hsl(var(--background));
+      }
+
+      #root.loaded {
+        opacity: 1;
+      }
+
+      /* Optional loading indicator */
+      .initial-loader {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        font-family: Inter, system-ui, sans-serif;
       }
     </style>
   </head>
 
   <body>
+    <!-- Optional loading indicator -->
+    <div class="initial-loader">Loading...</div>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
