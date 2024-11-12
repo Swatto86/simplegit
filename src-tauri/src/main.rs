@@ -48,7 +48,6 @@ unsafe impl Sync for AuthState {}
 // Add this near your other state management
 #[derive(Default)]
 struct WindowState {
-    is_skip_taskbar: bool,
 }
 
 #[tauri::command]
@@ -380,26 +379,15 @@ fn get_home_dir() -> String {
         .unwrap_or_else(|| String::from(""))
 }
 
-// Update the create_tray_menu function to take the current state
-fn create_tray_menu(is_skip_taskbar: bool) -> SystemTrayMenu {
+// Update the create_tray_menu function
+fn create_tray_menu() -> SystemTrayMenu {
     let show = CustomMenuItem::new("show".to_string(), "Show Window");
     let hide = CustomMenuItem::new("hide".to_string(), "Hide Window");
-    // Update the text based on the current state
-    let toggle_taskbar = CustomMenuItem::new(
-        "toggle_taskbar".to_string(),
-        if is_skip_taskbar {
-            "Show Taskbar Icon"
-        } else {
-            "Hide Taskbar Icon"
-        },
-    );
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     
     SystemTrayMenu::new()
         .add_item(show)
         .add_item(hide)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(toggle_taskbar)
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(quit)
 }
@@ -637,29 +625,8 @@ async fn remove_local_repository(path: String, state: State<'_, RepoState>) -> R
         return Ok("Operation cancelled".into());
     }
 
-    // Get the actual filesystem path
-    let actual_path = if path.contains('/') {
-        // This is a GitHub repository path (e.g., "Swatto86/PSTInsight")
-        // We need to get the actual filesystem path from the clone directory
-        let repo_name = path.split('/').last()
-            .ok_or_else(|| "Invalid repository path".to_string())?;
-        
-        // Try to get the saved clone directory
-        if let Ok(clone_dir) = std::env::var("CLONE_DIRECTORY") {
-            PathBuf::from(clone_dir).join(repo_name)
-        } else {
-            // Fallback to default directory
-            dirs::home_dir()
-                .ok_or_else(|| "Could not determine home directory".to_string())?
-                .join(".simplegit")
-                .join(repo_name)
-        }
-    } else {
-        // This is already a filesystem path
-        PathBuf::from(&path)
-    };
-
-    println!("Backend: Resolved actual path: {:?}", actual_path);
+    let path_buf = PathBuf::from(&path);
+    println!("Backend: Created PathBuf: {:?}", path_buf);
     
     // Clear Git state if this is the current repository
     {
@@ -667,7 +634,7 @@ async fn remove_local_repository(path: String, state: State<'_, RepoState>) -> R
         if let Some(current_repo) = state_lock.as_ref() {
             let current_path = current_repo.get_path();
             println!("Backend: Current repo path: {:?}", current_path);
-            if current_path == actual_path {
+            if current_path == path_buf {
                 println!("Backend: Clearing current repository state");
                 drop(state_lock); // Drop the read lock before taking write lock
                 *state.0.lock() = None;
@@ -676,17 +643,17 @@ async fn remove_local_repository(path: String, state: State<'_, RepoState>) -> R
     }
 
     // Check if directory exists before attempting removal
-    if !actual_path.exists() {
-        println!("Backend: Directory does not exist: {:?}", actual_path);
+    if !path_buf.exists() {
+        println!("Backend: Directory does not exist: {:?}", path_buf);
         return Err("Directory does not exist".into());
     }
 
-    println!("Backend: Attempting to remove directory: {:?}", actual_path);
+    println!("Backend: Attempting to remove directory: {:?}", path_buf);
     // Attempt to remove the directory and all its contents
-    match std::fs::remove_dir_all(&actual_path) {
+    match std::fs::remove_dir_all(&path_buf) {
         Ok(_) => {
             // Verify removal
-            if actual_path.exists() {
+            if path_buf.exists() {
                 println!("Backend: Directory still exists after removal attempt");
                 return Err("Failed to verify repository removal".into());
             }
@@ -739,6 +706,11 @@ async fn open_in_explorer(path: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn minimize_to_tray(window: tauri::Window) -> Result<(), String> {
+    window.hide().map_err(|e| e.to_string())
+}
+
 fn main() {
     // Load environment variables first
     dotenv::dotenv().ok();
@@ -755,46 +727,36 @@ fn main() {
     }
 
     // Create the context first
-    let context = tauri::generate_context!();
+    let _context = tauri::generate_context!();
     
     // Load saved taskbar state from app config
     let window_state = WindowState {
-        is_skip_taskbar: tauri::api::path::app_local_data_dir(&context.config())
-            .and_then(|path| std::fs::read_to_string(path.join("taskbar_state.txt")).ok())
-            .and_then(|state| state.trim().parse().ok())
-            .unwrap_or(false), // Default to false if no saved state
+        // is_skip_taskbar: tauri::api::path::app_local_data_dir(&context.config())
+        //     .and_then(|path| std::fs::read_to_string(path.join("taskbar_state.txt")).ok())
+        //     .and_then(|state| state.trim().parse().ok())
+        //     .unwrap_or(false), // Default to false if no saved state
     };
     
     let window_state = Mutex::new(window_state);
     
     // Create the tray menu first, getting the initial state
-    let tray_menu = SystemTray::new().with_menu(
-        create_tray_menu(window_state.lock().unwrap().is_skip_taskbar)
-    );
+    let tray_menu = SystemTray::new()
+        .with_menu(create_tray_menu())
+        .with_tooltip("SimpleGit");
     
-    let _app = tauri::Builder::default()
+    let app = tauri::Builder::default()
         .manage(RepoState::new())
         .manage(AuthState::new())
         .manage(window_state)
         .system_tray(tray_menu)
         .on_system_tray_event(|app, event| match event {
-            SystemTrayEvent::LeftClick {..} | SystemTrayEvent::DoubleClick {..} => {
+            SystemTrayEvent::LeftClick {..} => {
                 if let Some(window) = app.get_window("main") {
-                    // Toggle window visibility based on current state
-                    match window.is_visible() {
-                        Ok(visible) => {
-                            if visible {
-                                let _ = window.hide();
-                            } else {
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        }
-                        Err(_) => {
-                            // If we can't get visibility state, try to show window
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
+                    if window.is_visible().unwrap_or(false) {
+                        let _ = window.hide();
+                    } else {
+                        let _ = window.show();
+                        let _ = window.set_focus();
                     }
                 }
             }
@@ -802,30 +764,11 @@ fn main() {
                 let window = app.get_window("main").unwrap();
                 match id.as_str() {
                     "show" => {
-                        // Always show and focus window regardless of taskbar state
                         let _ = window.show();
                         let _ = window.set_focus();
                     }
                     "hide" => {
                         let _ = window.hide();
-                    }
-                    "toggle_taskbar" => {
-                        let state = app.state::<Mutex<WindowState>>();
-                        let mut state_guard = state.lock().unwrap();
-                        state_guard.is_skip_taskbar = !state_guard.is_skip_taskbar;
-                        let _ = window.set_skip_taskbar(state_guard.is_skip_taskbar);
-                        
-                        // Save the new state
-                        if let Some(app_dir) = tauri::api::path::app_local_data_dir(&app.config()) {
-                            let _ = std::fs::create_dir_all(&app_dir);
-                            let _ = std::fs::write(
-                                app_dir.join("taskbar_state.txt"),
-                                state_guard.is_skip_taskbar.to_string()
-                            );
-                        }
-                        
-                        let tray_handle = app.tray_handle();
-                        let _ = tray_handle.set_menu(create_tray_menu(state_guard.is_skip_taskbar));
                     }
                     "quit" => {
                         std::process::exit(0);
@@ -877,20 +820,29 @@ fn main() {
             remove_local_repository,
             open_in_vscode,
             open_in_explorer,
+            minimize_to_tray,
         ])
         .setup(|app| {
             let window = app.get_window("main").unwrap();
             window.set_decorations(true).unwrap();
-            
-            // Apply saved taskbar state on startup
-            let state = app.state::<Mutex<WindowState>>();
-            let state = state.lock().unwrap();
-            window.set_skip_taskbar(state.is_skip_taskbar).unwrap();
-            
+            window.set_skip_taskbar(true).unwrap();
             window.show().unwrap();
-            window.set_focus().unwrap();
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .on_window_event(|event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event.event() {
+                // Instead of closing, hide the window
+                event.window().hide().unwrap();
+                api.prevent_close();
+            }
+        })
+        .build(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    app.run(|_app_handle, event| match event {
+        tauri::RunEvent::ExitRequested { api, .. } => {
+            api.prevent_exit();
+        }
+        _ => {}
+    });
 }

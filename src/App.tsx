@@ -399,6 +399,18 @@ function App() {
     };
   }, [localRepository]);
 
+  useEffect(() => {
+    // Handle window close button
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      invoke('minimize_to_tray');
+      return false;
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   return (
     <TooltipProvider>
       <div className="flex min-h-screen bg-background overflow-hidden">
