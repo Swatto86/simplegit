@@ -16,6 +16,7 @@ use std::sync::Mutex;
 use crate::git_commands::DiffEntry;
 use dirs;
 use std::path::PathBuf;
+use std::process::Command;
 
 // Make RepoState thread-safe using parking_lot::Mutex
 pub struct RepoState(Arc<PLMutex<Option<GitRepo>>>);
@@ -621,40 +622,121 @@ async fn list_tags(_path: String, state: State<'_, RepoState>) -> Result<Vec<Str
 
 #[tauri::command]
 async fn remove_local_repository(path: String, state: State<'_, RepoState>) -> Result<String, String> {
-    let path_buf = PathBuf::from(&path);
+    println!("Backend: Starting repository removal for path: {}", path);
     
-    // Validate path is within allowed directories
-    let home_dir = dirs::home_dir()
-        .ok_or_else(|| "Could not determine home directory".to_string())?;
-    
-    if !path_buf.starts_with(&home_dir) {
-        return Err("Cannot remove repositories outside of home directory".into());
+    // Show confirmation dialog first
+    let confirmed = tauri::api::dialog::blocking::ask(
+        None::<&tauri::Window>,
+        "Remove Repository",
+        "Are you sure you want to remove this repository? This will delete the local copy and cannot be undone."
+    );
+    println!("Backend: User confirmation result: {}", confirmed);
+
+    if !confirmed {
+        println!("Backend: Operation cancelled by user");
+        return Ok("Operation cancelled".into());
     }
 
-    // Check if the directory exists
-    if !path_buf.exists() {
-        return Ok("Repository directory already removed".into());
-    }
+    // Get the actual filesystem path
+    let actual_path = if path.contains('/') {
+        // This is a GitHub repository path (e.g., "Swatto86/PSTInsight")
+        // We need to get the actual filesystem path from the clone directory
+        let repo_name = path.split('/').last()
+            .ok_or_else(|| "Invalid repository path".to_string())?;
+        
+        // Try to get the saved clone directory
+        if let Ok(clone_dir) = std::env::var("CLONE_DIRECTORY") {
+            PathBuf::from(clone_dir).join(repo_name)
+        } else {
+            // Fallback to default directory
+            dirs::home_dir()
+                .ok_or_else(|| "Could not determine home directory".to_string())?
+                .join(".simplegit")
+                .join(repo_name)
+        }
+    } else {
+        // This is already a filesystem path
+        PathBuf::from(&path)
+    };
 
+    println!("Backend: Resolved actual path: {:?}", actual_path);
+    
     // Clear Git state if this is the current repository
-    if let Some(current_repo) = state.0.lock().as_ref() {
-        // Use a method to get the path instead of accessing the field directly
-        if current_repo.get_path() == path_buf {
-            *state.0.lock() = None;
+    {
+        let state_lock = state.0.lock();
+        if let Some(current_repo) = state_lock.as_ref() {
+            let current_path = current_repo.get_path();
+            println!("Backend: Current repo path: {:?}", current_path);
+            if current_path == actual_path {
+                println!("Backend: Clearing current repository state");
+                drop(state_lock); // Drop the read lock before taking write lock
+                *state.0.lock() = None;
+            }
         }
     }
 
+    // Check if directory exists before attempting removal
+    if !actual_path.exists() {
+        println!("Backend: Directory does not exist: {:?}", actual_path);
+        return Err("Directory does not exist".into());
+    }
+
+    println!("Backend: Attempting to remove directory: {:?}", actual_path);
     // Attempt to remove the directory and all its contents
-    match std::fs::remove_dir_all(&path_buf) {
+    match std::fs::remove_dir_all(&actual_path) {
         Ok(_) => {
             // Verify removal
-            if path_buf.exists() {
+            if actual_path.exists() {
+                println!("Backend: Directory still exists after removal attempt");
                 return Err("Failed to verify repository removal".into());
             }
+            println!("Backend: Repository removed successfully");
             Ok("Repository removed successfully".into())
         }
-        Err(e) => Err(format!("Failed to remove repository: {}", e)),
+        Err(e) => {
+            println!("Backend: Error removing directory: {}", e);
+            Err(format!("Failed to remove repository: {}", e))
+        }
     }
+}
+
+#[tauri::command]
+async fn open_in_vscode(path: String) -> Result<(), String> {
+    let status = Command::new("code")
+        .arg(path)
+        .status()
+        .map_err(|e| e.to_string())?;
+
+    if !status.success() {
+        return Err("Failed to open VS Code".into());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn open_in_explorer(path: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 fn main() {
@@ -793,6 +875,8 @@ fn main() {
             list_branches,
             list_tags,
             remove_local_repository,
+            open_in_vscode,
+            open_in_explorer,
         ])
         .setup(|app| {
             let window = app.get_window("main").unwrap();

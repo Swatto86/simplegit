@@ -269,23 +269,20 @@ function App() {
 
   // Add a handler for removing local repository
   const handleRemoveLocal = async () => {
+    console.log("App: handleRemoveLocal called");
     if (localRepository) {
+      console.log("App: Clearing local repository state for:", localRepository);
       try {
-        // Attempt to remove the repository files
-        await invoke("remove_local_repository", {
-          path: localRepository.path
-        });
-        
-        // Clear the local repository state
         setLocalRepository(undefined);
         setRepoPath("");
+        console.log("App: State cleared successfully");
         setMessage("Local repository removed successfully");
-        
-        // Force close context menus
-        document.body.click();
       } catch (error) {
+        console.error("App: Error clearing state:", error);
         setMessage(`Error removing repository: ${error}`);
       }
+    } else {
+      console.log("App: No local repository to remove");
     }
   };
 

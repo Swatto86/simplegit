@@ -130,13 +130,31 @@ export const RepositoryDashboard: React.FC<{
   }, [repositories, onUpdateRepositories]);
 
   const handleRemoveLocal = async () => {
-    const confirmed = await confirm(
-      "Are you sure you want to remove this repository?",
-      "This will delete the local copy of the repository. This action cannot be undone."
-    );
+    if (!localRepository) {
+      console.log("Frontend: No local repository to remove");
+      return;
+    }
     
-    if (confirmed) {
-      onRemoveLocal?.();
+    console.log("Frontend: Starting removal process for:", localRepository);
+    
+    try {
+      console.log("Frontend: Invoking remove_local_repository with path:", localRepository.path);
+      const result = await invoke<string>("remove_local_repository", {
+        path: localRepository.path
+      });
+      
+      console.log("Frontend: Received result:", result);
+      
+      if (result.includes("successfully")) {
+        console.log("Frontend: Removal successful, calling onRemoveLocal");
+        onRemoveLocal?.();
+        onMessage?.(result);
+      } else {
+        console.log("Frontend: Removal did not complete successfully:", result);
+      }
+    } catch (error) {
+      console.error("Frontend: Error during removal:", error);
+      onMessage?.(`Error removing repository: ${error}`);
     }
   };
 
@@ -296,14 +314,7 @@ export const RepositoryDashboard: React.FC<{
         <ContextMenu>
           <ContextMenuTrigger>{card}</ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuItem 
-              className="text-destructive focus:text-destructive"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleRemoveLocal();
-              }}
-            >
+            <ContextMenuItem key="remove-local" onSelect={handleRemoveLocal}>
               Remove Local Repository
             </ContextMenuItem>
           </ContextMenuContent>
@@ -312,6 +323,24 @@ export const RepositoryDashboard: React.FC<{
     }
 
     return card;
+  };
+
+  const handleOpenVSCode = async () => {
+    if (!localRepository) return;
+    try {
+      await invoke("open_in_vscode", { path: localRepository.path });
+    } catch (error) {
+      onMessage?.(`Error opening VS Code: ${error}`);
+    }
+  };
+
+  const handleOpenExplorer = async () => {
+    if (!localRepository) return;
+    try {
+      await invoke("open_in_explorer", { path: localRepository.path });
+    } catch (error) {
+      onMessage?.(`Error opening Explorer: ${error}`);
+    }
   };
 
   return (
