@@ -4,7 +4,6 @@ use git2::{
 };
 use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
-use std::fs;
 use std::error::Error;
 use std::fmt;
 use notify::{Watcher, RecursiveMode, Event};
@@ -127,20 +126,23 @@ impl GitRepo {
     }
 
     pub fn clone(url: &str, path: &Path) -> Result<Self, GitError> {
-        // Create parent directory if it doesn't exist
+        // Ensure parent directory exists with proper permissions
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
+            std::fs::create_dir_all(parent)
+                .map_err(|e| GitError::Custom(format!("Failed to create directory: {}", e)))?;
+            
+            // On Unix systems, set directory permissions
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let mut perms = std::fs::metadata(parent)?.permissions();
+                perms.set_mode(0o755); // rwxr-xr-x
+                std::fs::set_permissions(parent, perms)?;
+            }
         }
 
         let token = std::env::var("GITHUB_TOKEN")
             .map_err(|_| GitError::Custom("GitHub token not found".to_string()))?;
-
-        // Transform the URL to include the token
-        let url_with_auth = if url.starts_with("https://github.com") {
-            url.replace("https://", &format!("https://oauth2:{}@", token))
-        } else {
-            url.to_string()
-        };
 
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_url, _username_from_url, _allowed_types| {
@@ -153,14 +155,20 @@ impl GitRepo {
         let mut builder = git2::build::RepoBuilder::new();
         builder.fetch_options(fetch_options);
 
-        let repo = builder.clone(&url_with_auth, path)
-            .map_err(|e| GitError::Git(e))?;
-        
-        Ok(GitRepo {
-            repo,
-            path: path.to_path_buf(),
-            watcher: None,
-        })
+        match builder.clone(url, path) {
+            Ok(repo) => Ok(GitRepo {
+                repo,
+                path: path.to_path_buf(),
+                watcher: None,
+            }),
+            Err(e) => {
+                // Clean up failed clone attempt
+                if path.exists() {
+                    let _ = std::fs::remove_dir_all(path);
+                }
+                Err(GitError::Git(e))
+            }
+        }
     }
 
     pub fn push(&self, _is_remote: bool) -> Result<(), GitError> {
@@ -559,6 +567,10 @@ impl GitRepo {
             .filter_map(|name| name.map(String::from))
             .collect();
         Ok(tags)
+    }
+
+    pub fn get_path(&self) -> PathBuf {
+        self.path.clone()
     }
 }
 

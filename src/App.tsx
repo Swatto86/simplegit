@@ -268,16 +268,25 @@ function App() {
   };
 
   // Add a handler for removing local repository
-  const handleRemoveLocal = () => {
-    // Cancel any ongoing operations
+  const handleRemoveLocal = async () => {
     if (localRepository) {
-      invoke("cleanup_repository", { path: localRepository.path }).catch(console.error);
+      try {
+        // Attempt to remove the repository files
+        await invoke("remove_local_repository", {
+          path: localRepository.path
+        });
+        
+        // Clear the local repository state
+        setLocalRepository(undefined);
+        setRepoPath("");
+        setMessage("Local repository removed successfully");
+        
+        // Force close context menus
+        document.body.click();
+      } catch (error) {
+        setMessage(`Error removing repository: ${error}`);
+      }
     }
-    
-    setLocalRepository(undefined);
-    setRepoPath("");
-    setMessage("Local repository removed");
-    document.body.click(); // Force close context menus
   };
 
   const handleRepositoryCloned = () => {
@@ -386,7 +395,9 @@ function App() {
     return () => {
       // Cleanup on unmount
       if (localRepository) {
-        invoke("cleanup_repository", { path: localRepository.path }).catch(console.error);
+        invoke("cleanup_repository", { path: localRepository.path }).catch(
+          console.error
+        );
       }
     };
   }, [localRepository]);

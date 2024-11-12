@@ -2,10 +2,20 @@ import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Plus, Save, History, RotateCcw, Check } from "lucide-react";
 import { OperationProps } from "../types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { FeedbackToast } from "@/components/ui/feedback-toast";
 
@@ -25,7 +35,10 @@ export const CommitOperations: React.FC<OperationProps> = ({
     message: string;
   } | null>(null);
 
-  const showFeedback = (type: "success" | "error" | "info", message: string) => {
+  const showFeedback = (
+    type: "success" | "error" | "info",
+    message: string
+  ) => {
     setFeedback({ type, message });
     setTimeout(() => setFeedback(null), 3000);
     onMessage(message);
@@ -89,7 +102,9 @@ export const CommitOperations: React.FC<OperationProps> = ({
 
   const handleViewLog = async () => {
     try {
-      const result = await invoke<string>("view_commit_log", { path: repoPath });
+      const result = await invoke<string>("view_commit_log", {
+        path: repoPath,
+      });
       showFeedback("info", result);
     } catch (error) {
       showFeedback("error", `Error viewing commit log: ${error}`);
@@ -115,7 +130,7 @@ export const CommitOperations: React.FC<OperationProps> = ({
           <div className="flex gap-4">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={handleStage}
                   disabled={!repoPath || !localRepository}
                 >
@@ -130,7 +145,7 @@ export const CommitOperations: React.FC<OperationProps> = ({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={() => setShowCommitDialog(true)}
                   disabled={!repoPath || !localRepository}
                 >
@@ -145,7 +160,7 @@ export const CommitOperations: React.FC<OperationProps> = ({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={handleViewLog}
                   disabled={!repoPath || !localRepository}
                 >
@@ -160,7 +175,7 @@ export const CommitOperations: React.FC<OperationProps> = ({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={() => setShowRevertDialog(true)}
                   disabled={!repoPath || !localRepository}
                 >
@@ -175,7 +190,7 @@ export const CommitOperations: React.FC<OperationProps> = ({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={handleAmend}
                   disabled={!repoPath || !localRepository}
                 >

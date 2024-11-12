@@ -202,7 +202,11 @@ async fn pull_changes(_path: String, is_remote: bool, state: State<'_, RepoState
 }
 
 #[tauri::command]
-async fn clone_repository(repo_url: String, state: State<'_, RepoState>) -> Result<String, String> {
+async fn clone_repository(
+    app_handle: tauri::AppHandle,
+    repo_url: String, 
+    state: State<'_, RepoState>
+) -> Result<String, String> {
     let token = std::env::var("GITHUB_TOKEN")
         .map_err(|_| "GitHub token not found".to_string())?;
 
@@ -211,7 +215,11 @@ async fn clone_repository(repo_url: String, state: State<'_, RepoState>) -> Resu
         .last()
         .ok_or_else(|| "Invalid repository URL".to_string())?
         .trim_end_matches(".git");
-    let clone_path = if let Ok(custom_dir) = std::env::var("CLONE_DIRECTORY") {
+
+    // Use the saved clone directory if available
+    let clone_path = if let Ok(saved_dir) = get_saved_clone_directory(app_handle).await {
+        PathBuf::from(saved_dir).join(repo_name)
+    } else if let Ok(custom_dir) = std::env::var("CLONE_DIRECTORY") {
         PathBuf::from(custom_dir).join(repo_name)
     } else {
         get_exe_dir()?.join("repositories").join(repo_name)
@@ -396,14 +404,48 @@ fn create_tray_menu(is_skip_taskbar: bool) -> SystemTrayMenu {
 }
 
 #[tauri::command]
-async fn set_clone_directory(path: String) -> Result<(), String> {
-    // Create the directory if it doesn't exist
+async fn set_clone_directory(app_handle: tauri::AppHandle, path: String) -> Result<(), String> {
     std::fs::create_dir_all(&path)
         .map_err(|e| format!("Failed to create directory: {}", e))?;
     
-    // Store the path in an environment variable or configuration file
+    // Get config dir from app_handle
+    let config_dir = app_handle.path_resolver()
+        .app_config_dir()
+        .ok_or_else(|| "Could not find config directory".to_string())?;
+    
+    // Ensure config directory exists
+    std::fs::create_dir_all(&config_dir)
+        .map_err(|e| format!("Failed to create config directory: {}", e))?;
+    
+    // Save to config file
+    let config_file = config_dir.join("clone_directory.txt");
+    std::fs::write(&config_file, &path)
+        .map_err(|e| format!("Failed to save config: {}", e))?;
+    
+    // Also set environment variable for current session
     std::env::set_var("CLONE_DIRECTORY", path);
     Ok(())
+}
+
+#[tauri::command]
+async fn get_saved_clone_directory(app_handle: tauri::AppHandle) -> Result<String, String> {
+    let config_dir = app_handle.path_resolver()
+        .app_config_dir()
+        .ok_or_else(|| "Could not find config directory".to_string())?;
+    
+    let config_file = config_dir.join("clone_directory.txt");
+    
+    if config_file.exists() {
+        std::fs::read_to_string(config_file)
+            .map_err(|e| format!("Failed to read config: {}", e))
+    } else {
+        // Return default if no saved directory
+        Ok(dirs::home_dir()
+            .ok_or_else(|| "Could not find home directory".to_string())?
+            .join(".simplegit")
+            .to_string_lossy()
+            .to_string())
+    }
 }
 
 fn get_exe_dir() -> Result<PathBuf, String> {
@@ -577,6 +619,44 @@ async fn list_tags(_path: String, state: State<'_, RepoState>) -> Result<Vec<Str
     }
 }
 
+#[tauri::command]
+async fn remove_local_repository(path: String, state: State<'_, RepoState>) -> Result<String, String> {
+    let path_buf = PathBuf::from(&path);
+    
+    // Validate path is within allowed directories
+    let home_dir = dirs::home_dir()
+        .ok_or_else(|| "Could not determine home directory".to_string())?;
+    
+    if !path_buf.starts_with(&home_dir) {
+        return Err("Cannot remove repositories outside of home directory".into());
+    }
+
+    // Check if the directory exists
+    if !path_buf.exists() {
+        return Ok("Repository directory already removed".into());
+    }
+
+    // Clear Git state if this is the current repository
+    if let Some(current_repo) = state.0.lock().as_ref() {
+        // Use a method to get the path instead of accessing the field directly
+        if current_repo.get_path() == path_buf {
+            *state.0.lock() = None;
+        }
+    }
+
+    // Attempt to remove the directory and all its contents
+    match std::fs::remove_dir_all(&path_buf) {
+        Ok(_) => {
+            // Verify removal
+            if path_buf.exists() {
+                return Err("Failed to verify repository removal".into());
+            }
+            Ok("Repository removed successfully".into())
+        }
+        Err(e) => Err(format!("Failed to remove repository: {}", e)),
+    }
+}
+
 fn main() {
     // Load environment variables first
     dotenv::dotenv().ok();
@@ -712,6 +792,7 @@ fn main() {
             get_current_branch,
             list_branches,
             list_tags,
+            remove_local_repository,
         ])
         .setup(|app| {
             let window = app.get_window("main").unwrap();

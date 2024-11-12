@@ -2,9 +2,19 @@ import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Archive, Tag, RotateCw, Network, GitCompare } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { OperationProps } from "../types";
 import { FeedbackToast } from "@/components/ui/feedback-toast";
@@ -46,7 +56,10 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
   const [diffData, setDiffData] = useState<DiffEntry[]>([]);
   const [showDiffDialog, setShowDiffDialog] = useState(false);
 
-  const showFeedback = (type: "success" | "error" | "info", message: string) => {
+  const showFeedback = (
+    type: "success" | "error" | "info",
+    message: string
+  ) => {
     setFeedback({ type, message });
     setTimeout(() => setFeedback(null), 3000);
     onMessage(message);
@@ -136,25 +149,25 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
 
   const handleDiff = async () => {
     if (!localRepository) {
-        showFeedback("error", "Please clone the repository first");
-        return;
+      showFeedback("error", "Please clone the repository first");
+      return;
     }
 
     try {
-        const result = await invoke<DiffEntry[]>("view_diff", {
-            path: localRepository.path
-        });
-        
-        if (result.length === 0) {
-            showFeedback("info", "No changes detected");
-            return;
-        }
-        
-        setDiffData(result);
-        setShowDiffDialog(true);
+      const result = await invoke<DiffEntry[]>("view_diff", {
+        path: localRepository.path,
+      });
+
+      if (result.length === 0) {
+        showFeedback("info", "No changes detected");
+        return;
+      }
+
+      setDiffData(result);
+      setShowDiffDialog(true);
     } catch (error) {
-        console.error("Diff error:", error);
-        showFeedback("error", `Error viewing diff: ${error}`);
+      console.error("Diff error:", error);
+      showFeedback("error", `Error viewing diff: ${error}`);
     }
   };
 
@@ -168,7 +181,7 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
           <div className="flex gap-4">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={handleStash}
                   disabled={!repoPath || !localRepository || isStashing}
                 >
@@ -177,13 +190,15 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Save your current changes temporarily without committing them</p>
+                <p>
+                  Save your current changes temporarily without committing them
+                </p>
               </TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={handleStashPop}
                   disabled={!repoPath || !localRepository}
                 >
@@ -198,7 +213,7 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={() => setShowTagDialog(true)}
                   disabled={!repoPath || !localRepository}
                 >
@@ -207,13 +222,16 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Create a named reference to mark an important point in your project's history</p>
+                <p>
+                  Create a named reference to mark an important point in your
+                  project's history
+                </p>
               </TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   variant="destructive"
                   onClick={() => setShowResetDialog(true)}
                   disabled={!repoPath || !localRepository}
@@ -223,13 +241,16 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Reset your working directory to a specific commit (Warning: this will discard all uncommitted changes)</p>
+                <p>
+                  Reset your working directory to a specific commit (Warning:
+                  this will discard all uncommitted changes)
+                </p>
               </TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={handleListRemotes}
                   disabled={!repoPath || !localRepository}
                 >
@@ -238,13 +259,15 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>View and manage connections to other copies of your repository</p>
+                <p>
+                  View and manage connections to other copies of your repository
+                </p>
               </TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={handleDiff}
                   disabled={!repoPath || !localRepository}
                 >
@@ -289,8 +312,8 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
           <DialogHeader>
             <DialogTitle>Reset Repository</DialogTitle>
             <DialogDescription>
-              Enter the commit hash to reset to. This will discard all changes after this commit.
-              This action cannot be undone.
+              Enter the commit hash to reset to. This will discard all changes
+              after this commit. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <Input
@@ -298,9 +321,9 @@ export const AdvancedOperations: React.FC<OperationProps> = ({
             onChange={(e) => setResetCommitHash(e.target.value)}
             placeholder="Commit hash"
           />
-          <Button 
+          <Button
             variant="destructive"
-            onClick={handleReset} 
+            onClick={handleReset}
             disabled={isResetting}
           >
             {isResetting ? "Resetting..." : "Reset"}

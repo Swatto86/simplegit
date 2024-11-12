@@ -2,9 +2,19 @@ import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { GitBranch, GitMerge, Trash2, GitCommit } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { OperationProps } from "../types";
 import { FeedbackToast } from "@/components/ui/feedback-toast";
@@ -28,7 +38,10 @@ export const BranchOperations: React.FC<OperationProps> = ({
   } | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const showFeedback = (type: "success" | "error" | "info", message: string) => {
+  const showFeedback = (
+    type: "success" | "error" | "info",
+    message: string
+  ) => {
     setFeedback({ type, message });
     setTimeout(() => setFeedback(null), 3000);
     onMessage(message);
@@ -128,7 +141,7 @@ export const BranchOperations: React.FC<OperationProps> = ({
           <div className="flex gap-4">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={() => setShowCreateDialog(true)}
                   disabled={!repoPath || !localRepository}
                 >
@@ -143,7 +156,7 @@ export const BranchOperations: React.FC<OperationProps> = ({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={() => setShowCheckoutDialog(true)}
                   disabled={!repoPath || !localRepository}
                 >
@@ -158,7 +171,7 @@ export const BranchOperations: React.FC<OperationProps> = ({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   onClick={() => setShowMergeDialog(true)}
                   disabled={!repoPath || !localRepository}
                 >
@@ -173,7 +186,7 @@ export const BranchOperations: React.FC<OperationProps> = ({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   variant="destructive"
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={!repoPath || !localRepository}
@@ -252,7 +265,8 @@ export const BranchOperations: React.FC<OperationProps> = ({
           <DialogHeader>
             <DialogTitle>Delete Branch</DialogTitle>
             <DialogDescription>
-              Enter the name of the branch to delete. This action cannot be undone.
+              Enter the name of the branch to delete. This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <Input
@@ -260,10 +274,7 @@ export const BranchOperations: React.FC<OperationProps> = ({
             onChange={(e) => setTargetBranch(e.target.value)}
             placeholder="Branch name"
           />
-          <Button 
-            variant="destructive" 
-            onClick={handleDeleteBranch}
-          >
+          <Button variant="destructive" onClick={handleDeleteBranch}>
             Delete Branch
           </Button>
         </DialogContent>

@@ -23,6 +23,7 @@ import {
   ContextMenuTrigger,
 } from "../../../components/ui/context-menu";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { confirm } from "@tauri-apps/api/dialog";
 
 interface LocalRepository {
   path: string;
@@ -127,6 +128,17 @@ export const RepositoryDashboard: React.FC<{
 
     updateStats();
   }, [repositories, onUpdateRepositories]);
+
+  const handleRemoveLocal = async () => {
+    const confirmed = await confirm(
+      "Are you sure you want to remove this repository?",
+      "This will delete the local copy of the repository. This action cannot be undone."
+    );
+    
+    if (confirmed) {
+      onRemoveLocal?.();
+    }
+  };
 
   const renderRepositoryCard = (repo: Repository | LocalRepository) => {
     const isLocal = "isLocal" in repo;
@@ -283,13 +295,13 @@ export const RepositoryDashboard: React.FC<{
       return (
         <ContextMenu>
           <ContextMenuTrigger>{card}</ContextMenuTrigger>
-          <ContextMenuContent onEscapeKeyDown={onRemoveLocal}>
+          <ContextMenuContent>
             <ContextMenuItem 
               className="text-destructive focus:text-destructive"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onRemoveLocal?.();
+                handleRemoveLocal();
               }}
             >
               Remove Local Repository

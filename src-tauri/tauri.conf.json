@@ -34,7 +34,7 @@
         "writeFile": true,
         "readDir": true,
         "exists": true,
-        "scope": ["**"]
+        "scope": ["$HOME/.simplegit/**", "$HOME/simplegit/**"]
       },
       "path": {
         "all": true
@@ -52,7 +52,7 @@
     "bundle": {
       "active": true,
       "category": "DeveloperTool",
-      "copyright": "© 2024 SimpleGit",
+      "copyright": "©2024 SimpleGit",
       "deb": {
         "depends": []
       },
