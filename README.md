@@ -36,7 +36,6 @@ For a complete list of releases and changes, visit our [Releases page](https://g
 - Initial release
 - Core Git operations support
 - GitHub integration
-- Cross-platform support
 - Multiple themes
 
 ## Development Setup
